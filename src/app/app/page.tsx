@@ -76,6 +76,24 @@ export default function AppPage() {
     fluent: 'from-pink-400 to-rose-500',
   };
 
+  const levelEmojis: Record<string, string> = {
+    beginner: '🌱',
+    elementary: '📗',
+    intermediate: '📘',
+    upper_intermediate: '📙',
+    advanced: '🏆',
+    fluent: '👑',
+  };
+
+  const levelNames: Record<string, string> = {
+    beginner: 'Iniciante',
+    elementary: 'Elementar',
+    intermediate: 'Intermediário',
+    upper_intermediate: 'Upper Intermediário',
+    advanced: 'Avançado',
+    fluent: 'Fluente',
+  };
+
   return (
     <div className="min-h-screen bg-gradient-to-br from-indigo-950 via-purple-900 to-indigo-950">
       {/* Header */}
@@ -113,12 +131,17 @@ export default function AppPage() {
       <main className="max-w-5xl mx-auto px-4 py-6 space-y-6">
         {/* Welcome Section */}
         <div className="text-center py-6">
-          <div className="inline-flex items-center gap-2 px-4 py-2 bg-gradient-to-r from-purple-500/20 to-pink-500/20 rounded-full border border-purple-500/30 mb-4">
-            <Sparkles className="w-4 h-4 text-purple-300" />
-            <span className="text-sm text-purple-200">Bem-vindo de volta!</span>
+          {/* Level Badge */}
+          <div className={`inline-flex items-center gap-3 px-6 py-3 bg-gradient-to-r ${levelColors[userProgress.level]} rounded-full border border-white/20 mb-4 shadow-lg`}>
+            <span className="text-2xl">{levelEmojis[userProgress.level]}</span>
+            <div className="text-left">
+              <p className="text-xs text-white/80">Seu Nível</p>
+              <p className="text-lg font-bold text-white">{levelNames[userProgress.level]}</p>
+            </div>
           </div>
+          
           <h2 className="text-3xl md:text-4xl font-bold text-white mb-2">
-            Pronto para praticar?
+            {userProgress.xp_points > 0 ? 'Continue sua jornada!' : 'Pronto para começar?'}
           </h2>
           <p className="text-purple-300">Mantenha sua streak viva! 🔥</p>
         </div>

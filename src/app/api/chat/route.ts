@@ -1,20 +1,20 @@
 import { NextRequest, NextResponse } from 'next/server';
-import type { LanguageLevel, Correction } from '@/types';
 
-const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY;
+const GEMINI_API_KEY = process.env.GEMINI_API_KEY || '';
+const GROK_API_KEY = process.env.GROK_API_KEY || '';
+const OPENROUTER_API_KEY = process.env.OPENROUTER_API_KEY || '';
 
-interface OpenRouterMessage {
-  role: 'system' | 'user' | 'assistant';
+interface Message {
+  role: 'user' | 'assistant';
   content: string;
 }
 
 const LANGUAGE_PROMPTS: Record<string, string> = {
-  en: 'You are a patient and encouraging English teacher. Help students practice conversation, correct grammar gently with encouraging feedback. Always be supportive and celebrate their efforts.',
-  es: 'Eres un maestro de español paciente y amable. Ayuda a los estudiantes a practicar la conversación, corrige la gramática gentilmente con comentarios positivos.',
-  fr: "Vous êtes un professeur de français patient et encourageant. Aidez les étudiants à pratiquer la conversation, corrigez la grammaire avec gentillesse.",
-  de: 'Du bist ein geduldiger und ermutigender Deutschlehrer. Hilf Schülern beim Üben, korrigiere Grammatik sanft.',
-  it: 'Sei un insegnante d\'italiano paziente e incoraggiante. Aiuta gli studenti a praticare la conversazione, correggi la grammatica gentilmente.',
-  pt: 'Você é um professor de português paciente e encorajador. Ajude os alunos a praticar a conversão, corrija a gramática gentilmente.',
+  en: 'You are a patient and encouraging English teacher. Help students practice conversation, correct grammar gently with encouraging feedback. Always be supportive.',
+  es: 'Eres un maestro de español paciente y amable. Ayuda a los estudiantes a practicar la conversación, corrige la gramática gentilmente.',
+  fr: "Vous êtes un professeur de français patient et encourageant. Aidez les étudiants à pratiquer la conversation.",
+  de: 'Du bist ein geduldiger Deutschlehrer. Hilf Schülern beim Üben.',
+  pt: 'Você é um professor paciente e encorajador. Ajude os alunos a praticar.',
 };
 
 export async function POST(request: NextRequest) {
@@ -26,93 +26,173 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Message is required' }, { status: 400 });
     }
 
-    if (!OPENROUTER_API_KEY) {
-      return NextResponse.json({ 
-        response: 'Desculpe, a chave da API OpenRouter não está configurada. Por favor, configure a variável OPENROUTER_API_KEY.',
-        correction: null
-      }, { status: 200 });
-    }
-
     const systemPrompt = buildSystemPrompt(language, level, immersionMode, lastErrors);
-    
-    const messages: OpenRouterMessage[] = [
-      { role: 'system', content: systemPrompt },
-      ...(chatHistory || []).slice(-10),
-      { role: 'user', content: message },
-    ];
 
-    const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${OPENROUTER_API_KEY}`,
-        'HTTP-Referer': 'https://poly-grok.vercel.app',
-        'X-Title': 'PolyGrok',
-      },
-      body: JSON.stringify({
-        model: 'anthropic/claude-3-haiku-20240307',
-        messages,
-        max_tokens: 1000,
-        temperature: 0.8,
-      }),
-    });
-
-    if (!response.ok) {
-      const errorText = await response.text();
-      console.error('OpenRouter API error:', response.status, errorText);
-      return NextResponse.json({ 
-        response: 'Desculpe, houve um problema ao conectar com a IA. Tente novamente.',
-        correction: null
-      }, { status: 200 });
+    // Try Gemini first (free)
+    if (GEMINI_API_KEY) {
+      try {
+        const response = await callGemini(GEMINI_API_KEY, systemPrompt, message);
+        if (response) {
+          return NextResponse.json({ response, correction: null });
+        }
+      } catch (e) {
+        console.error('Gemini failed:', e);
+      }
     }
 
-    const data = await response.json();
-    const assistantMessage = data.choices?.[0]?.message?.content || 'Desculpe, não consegui gerar uma resposta.';
+    // Try Grok
+    if (GROK_API_KEY) {
+      try {
+        const response = await callGrok(GROK_API_KEY, systemPrompt, message, chatHistory || []);
+        if (response) {
+          return NextResponse.json({ response, correction: null });
+        }
+      } catch (e) {
+        console.error('Grok failed:', e);
+      }
+    }
 
+    // Try OpenRouter
+    if (OPENROUTER_API_KEY) {
+      try {
+        const response = await callOpenRouter(OPENROUTER_API_KEY, systemPrompt, message, chatHistory || []);
+        if (response) {
+          return NextResponse.json({ response, correction: null });
+        }
+      } catch (e) {
+        console.error('OpenRouter failed:', e);
+      }
+    }
+
+    // Fallback to mock response
     return NextResponse.json({
-      response: assistantMessage,
+      response: generateMockResponse(message, language),
       correction: null,
     });
+
   } catch (error) {
     console.error('Chat API error:', error);
-    return NextResponse.json({ 
+    return NextResponse.json({
       response: 'Desculpe, houve um erro. Tente novamente.',
       correction: null
     }, { status: 200 });
   }
 }
 
-function buildSystemPrompt(
-  language: string,
-  level: LanguageLevel,
-  immersionMode: boolean,
-  lastErrors: string[]
-): string {
+async function callGemini(apiKey: string, systemPrompt: string, message: string): Promise<string | null> {
+  const response = await fetch(
+    `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${apiKey}`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{
+          parts: [{
+            text: `${systemPrompt}\n\nUser: ${message}\n\nTeacher:`
+          }]
+        }],
+        generationConfig: { maxOutputTokens: 500, temperature: 0.9 }
+      }),
+    }
+  );
+
+  if (!response.ok) return null;
+  const data = await response.json();
+  return data.candidates?.[0]?.content?.parts?.[0]?.text || null;
+}
+
+async function callGrok(apiKey: string, systemPrompt: string, message: string, chatHistory: Message[]): Promise<string | null> {
+  const messages = [
+    { role: 'system', content: systemPrompt },
+    ...chatHistory.slice(-6),
+    { role: 'user', content: message }
+  ];
+
+  const response = await fetch('https://api.groq.com/openai/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+    },
+    body: JSON.stringify({
+      model: 'llama-3.1-8b-instant',
+      messages,
+      max_tokens: 500,
+      temperature: 0.9,
+    }),
+  });
+
+  if (!response.ok) return null;
+  const data = await response.json();
+  return data.choices?.[0]?.message?.content || null;
+}
+
+async function callOpenRouter(apiKey: string, systemPrompt: string, message: string, chatHistory: Message[]): Promise<string | null> {
+  const messages = [
+    { role: 'system', content: systemPrompt },
+    ...chatHistory.slice(-6),
+    { role: 'user', content: message }
+  ];
+
+  const response = await fetch('https://openrouter.ai/api/v1/chat/completions', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${apiKey}`,
+      'HTTP-Referer': 'https://poly-grok.vercel.app',
+      'X-Title': 'PolyGrok',
+    },
+    body: JSON.stringify({
+      model: 'anthropic/claude-3-haiku-20240307',
+      messages,
+      max_tokens: 500,
+      temperature: 0.9,
+    }),
+  });
+
+  if (!response.ok) return null;
+  const data = await response.json();
+  return data.choices?.[0]?.message?.content || null;
+}
+
+function buildSystemPrompt(language: string, level: string, immersionMode: boolean, lastErrors: string[]): string {
   const langPrompt = LANGUAGE_PROMPTS[language] || LANGUAGE_PROMPTS.en;
   
   let prompt = `${langPrompt}\n\n`;
-  prompt += `Teaching level: ${level}\n`;
-  prompt += `Student language: ${language}\n\n`;
+  prompt += `Level: ${level}\n`;
+  prompt += immersionMode ? `IMMERSION MODE: Only speak in ${language}.\n\n` : `You may use Portuguese briefly if needed.\n\n`;
+  prompt += `Be encouraging, keep responses short (2-3 sentences), ask follow-up questions.\n`;
 
-  if (immersionMode) {
-    prompt += `IMMERSION MODE: Only speak in ${language}. Never use the student's native language.\n\n`;
-  } else {
-    prompt += `You may use Portuguese (Brazilian) to explain complex concepts briefly.\n\n`;
-  }
-
-  prompt += `Guidelines:\n`;
-  prompt += `- Be patient, encouraging, and supportive\n`;
-  prompt += `- Celebrate small victories\n`;
-  prompt += `- Gently correct grammar mistakes\n`;
-  prompt += `- Keep responses conversational (2-4 sentences max)\n`;
-  prompt += `- Ask follow-up questions to keep conversation going\n`;
-
-  if (lastErrors && lastErrors.length > 0) {
-    prompt += `\nCommon mistakes to gently remind about:\n`;
-    lastErrors.slice(0, 3).forEach((error, i) => {
-      prompt += `${i + 1}. ${error}\n`;
-    });
+  if (lastErrors?.length > 0) {
+    prompt += `\nRemind gently about: ${lastErrors.slice(0, 2).join(', ')}\n`;
   }
 
   return prompt;
+}
+
+function generateMockResponse(message: string, language: string): string {
+  const lower = message.toLowerCase();
+  
+  if (lower.match(/^(hi|hello|hey|olá|hola)/)) {
+    return "Hello! Great to see you! How are you today? Let's practice some English together! 🌟";
+  }
+  if (lower.includes('name') || lower.includes('who are you')) {
+    return "I'm Poly, your English teacher! I'm here to help you practice. What would you like to talk about? 😊";
+  }
+  if (lower.includes('how are you')) {
+    return "I'm doing great, thank you! I'm excited to help you today. Are you ready to start? 💪";
+  }
+  if (lower.includes('weather')) {
+    return "Great topic! We say 'The weather is sunny' or 'It's raining.' What's the weather like where you are? ☀️";
+  }
+  
+  const responses = [
+    "That's great! Tell me more about that. Practice makes perfect! 🌟",
+    "I appreciate your effort! Let's continue. What else would you like to discuss? 💬",
+    "Wonderful! You're improving. Keep practicing! 🚀",
+    "I understand! Let's practice more. Try different words! 📚",
+    "Excellent! Every conversation helps. What topic next? ✨"
+  ];
+  
+  return responses[Math.floor(Math.random() * responses.length)];
 }
