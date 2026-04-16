@@ -6,7 +6,7 @@ import {
   GraduationCap, Lightbulb, MapPin, Clock,
   Trophy, Target, TrendingUp, Sparkles, CheckCircle, Star, Mic, MicOff, Settings
 } from 'lucide-react';
-import { useTextToSpeech } from '@/hooks/useSpeechRecognition';
+import useNaturalTTS from '@/hooks/useNaturalTTS';
 import { useUserStore } from '@/store/userStore';
 import PremiumAvatar from './PremiumAvatar';
 import { conversationService } from '@/lib/conversationService';
@@ -469,9 +469,10 @@ export default function ProfessorAI({ level, language, onProgress }: ProfessorAI
   const config = LEVEL_CONFIG[level];
   const isBeginner = level === 'beginner' || level === 'elementary';
 
-  const { speak, stop: stopSpeaking } = useTextToSpeech({
+  const { speak, stop: stopSpeaking } = useNaturalTTS({
     language: getSpeechLanguage(language),
     onEnd: () => setIsSpeaking(false),
+    useNaturalVoice: true,
   });
 
   const { 

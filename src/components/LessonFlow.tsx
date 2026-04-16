@@ -1,6 +1,6 @@
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   ArrowLeft, 
   ArrowRight, 
@@ -19,6 +19,7 @@ import {
 import Link from 'next/link';
 import { useUserStore } from '@/store/userStore';
 import PremiumAvatar from './PremiumAvatar';
+import useNaturalTTS from '@/hooks/useNaturalTTS';
 import type { TeachingPhase, Lesson, TeachingStep } from '@/data/teachingMethodology';
 import { getLessonsByLanguage, getTeachingProgress } from '@/data/teachingMethodology';
 import type { LanguageLevel } from '@/types';
@@ -80,13 +81,20 @@ export default function LessonFlow({ language, level, lessonId, onComplete, onEx
   const progressPercent = totalSteps > 0 ? ((currentStepIndex + 1) / totalSteps) * 100 : 0;
   const nativeRatio = 1 - progress.targetRatio;
 
-  const speak = (text: string) => {
-    if (isMuted) return;
-    const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = level === 'beginner' || level === 'elementary' ? 'pt-BR' : 'en-US';
-    utterance.rate = 0.9;
-    speechSynthesis.speak(utterance);
+  const getLangCode = (lvl: LanguageLevel, lang: string): string => {
+    if (lvl === 'beginner' || lvl === 'elementary') return 'pt-BR';
+    const map: Record<string, string> = {
+      en: 'en-US', es: 'es-ES', fr: 'fr-FR', de: 'de-DE',
+      it: 'it-IT', pt: 'pt-BR', ja: 'ja-JP', ko: 'ko-KR',
+      zh: 'zh-CN', ru: 'ru-RU'
+    };
+    return map[lang] || 'pt-BR';
   };
+
+  const { speak, stop: stopSpeaking } = useNaturalTTS({
+    language: getLangCode(level, language),
+    useNaturalVoice: true,
+  });
 
   useEffect(() => {
     if (currentStep && !isMuted) {
@@ -99,7 +107,7 @@ export default function LessonFlow({ language, level, lessonId, onComplete, onEx
       }, 500);
       return () => clearTimeout(timer);
     }
-  }, [currentStepIndex, currentStep, isMuted]);
+  }, [currentStepIndex, currentStep, isMuted, speak]);
 
   const checkAnswer = () => {
     if (!studentAnswer.trim() || !currentStep?.expectedResponse) return;
