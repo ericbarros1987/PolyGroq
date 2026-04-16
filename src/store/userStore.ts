@@ -1,10 +1,21 @@
 import { create } from 'zustand';
 import { supabase } from '@/lib/supabase';
-import type { UserProgress, Language, LanguageLevel, ChatMessage, ConversationContext } from '@/types';
+import type { UserProgress, Language, LanguageLevel, ChatMessage, ConversationContext, ConversationMemory, VocabularyItem, ConversationFeedback } from '@/types';
 
 interface UserStore {
   userProgress: UserProgress | null;
   loading: boolean;
+  conversationMemory: ConversationMemory;
+  currentConversation: {
+    messages: ChatMessage[];
+    startTime: Date | null;
+    topic: string | null;
+    scenario: string | null;
+    correctCount: number;
+    errorCount: number;
+    newVocabulary: VocabularyItem[];
+    errors: string[];
+  };
   setUserProgress: (progress: UserProgress | null) => void;
   setLoading: (loading: boolean) => void;
   updateStreak: () => void;
@@ -13,30 +24,65 @@ interface UserStore {
   setLevel: (level: LanguageLevel) => void;
   toggleImmersionMode: () => void;
   saveProgress: (progress: Partial<UserProgress>) => Promise<void>;
+  
+  // Memory functions
+  trackError: (error: string, correction: string) => void;
+  trackMasteredExpression: (expression: string) => void;
+  updateConversationMemory: (memory: Partial<ConversationMemory>) => void;
+  
+  // Conversation functions
+  startConversation: (topic?: string, scenario?: string) => void;
+  addConversationMessage: (message: ChatMessage) => void;
+  endConversation: () => ConversationFeedback;
 }
+
+const initialMemory: ConversationMemory = {
+  recentTopics: [],
+  masteredExpressions: [],
+  strugglingWith: [],
+  totalConversations: 0,
+  averageAccuracy: 0,
+};
 
 export const useUserStore = create<UserStore>((set, get) => ({
   userProgress: null,
   loading: true,
+  conversationMemory: initialMemory,
+  currentConversation: {
+    messages: [],
+    startTime: null,
+    topic: null,
+    scenario: null,
+    correctCount: 0,
+    errorCount: 0,
+    newVocabulary: [],
+    errors: [],
+  },
 
-  setUserProgress: (progress) => set({ userProgress: progress }),
+  setUserProgress: (progress) => set({ 
+    userProgress: progress,
+    conversationMemory: progress?.conversation_memory || initialMemory
+  }),
   setLoading: (loading) => set({ loading }),
 
   saveProgress: async (progress) => {
-    const { userProgress } = get();
+    const { userProgress, conversationMemory } = get();
     if (!userProgress) return;
 
     const userId = localStorage.getItem('poly_grok_user_id');
     if (!userId) return;
 
     try {
+      const fullProgress = {
+        ...progress,
+        user_id: userId,
+        updated_at: new Date().toISOString(),
+        conversation_memory: conversationMemory,
+      };
+      
       await supabase
         .from('user_progress')
-        .upsert({ 
-          ...progress, 
-          user_id: userId,
-          updated_at: new Date().toISOString() 
-        })
+        .upsert(fullProgress)
         .eq('user_id', userId);
     } catch (error) {
       console.error('Error saving progress:', error);
@@ -75,7 +121,7 @@ export const useUserStore = create<UserStore>((set, get) => ({
   },
 
   addXP: (amount) => {
-    const { userProgress, saveProgress } = get();
+    const { userProgress, saveProgress, currentConversation } = get();
     if (!userProgress) return;
 
     const newXP = userProgress.xp_points + amount;
@@ -130,6 +176,176 @@ export const useUserStore = create<UserStore>((set, get) => ({
     const newProgress = { ...userProgress, immersion_mode: !userProgress.immersion_mode };
     set({ userProgress: newProgress });
     saveProgress({ immersion_mode: newProgress.immersion_mode });
+  },
+
+  trackError: (error: string, correction: string) => {
+    const { userProgress, conversationMemory, currentConversation } = get();
+    
+    if (!userProgress) return;
+
+    const errorsFrequency = { ...(userProgress.errors_frequency || {}) };
+    const errorKey = `${error} -> ${correction}`;
+    errorsFrequency[errorKey] = (errorsFrequency[errorKey] || 0) + 1;
+
+    const strugglingWith = [...(userProgress.areas_to_improve || [])];
+    if (!strugglingWith.includes(error)) {
+      strugglingWith.push(error);
+    }
+
+    const newProgress = {
+      ...userProgress,
+      errors_frequency: errorsFrequency,
+      areas_to_improve: strugglingWith.slice(-10),
+    };
+
+    const newCurrentConversation = {
+      ...currentConversation,
+      errorCount: currentConversation.errorCount + 1,
+      errors: [...currentConversation.errors, error],
+    };
+
+    set({ 
+      userProgress: newProgress,
+      currentConversation: newCurrentConversation,
+    });
+    
+    get().saveProgress({ errors_frequency: errorsFrequency, areas_to_improve: strugglingWith.slice(-10) });
+  },
+
+  trackMasteredExpression: (expression: string) => {
+    const { userProgress, conversationMemory } = get();
+    
+    if (!userProgress) return;
+
+    const masteredExpressions = [...(userProgress.conversation_memory?.masteredExpressions || [])];
+    if (!masteredExpressions.includes(expression)) {
+      masteredExpressions.push(expression);
+    }
+
+    const newMemory = {
+      ...conversationMemory,
+      masteredExpressions: masteredExpressions.slice(-50),
+    };
+
+    set({ 
+      conversationMemory: newMemory,
+    });
+  },
+
+  updateConversationMemory: (memory: Partial<ConversationMemory>) => {
+    const { conversationMemory } = get();
+    const newMemory = { ...conversationMemory, ...memory };
+    set({ conversationMemory: newMemory });
+  },
+
+  startConversation: (topic?: string, scenario?: string) => {
+    set({
+      currentConversation: {
+        messages: [],
+        startTime: new Date(),
+        topic: topic || null,
+        scenario: scenario || null,
+        correctCount: 0,
+        errorCount: 0,
+        newVocabulary: [],
+        errors: [],
+      },
+    });
+  },
+
+  addConversationMessage: (message: ChatMessage) => {
+    const { currentConversation } = get();
+    
+    let newCorrectCount = currentConversation.correctCount;
+    let newVocabulary = [...currentConversation.newVocabulary];
+    
+    if (message.vocabulary && message.vocabulary.length > 0) {
+      newVocabulary = [...newVocabulary, ...message.vocabulary];
+    }
+    
+    if (message.correction) {
+      newCorrectCount = currentConversation.correctCount;
+    } else if (message.role === 'user') {
+      newCorrectCount = currentConversation.correctCount + 1;
+    }
+
+    set({
+      currentConversation: {
+        ...currentConversation,
+        messages: [...currentConversation.messages, message],
+        correctCount: newCorrectCount,
+        newVocabulary: newVocabulary,
+      },
+    });
+  },
+
+  endConversation: (): ConversationFeedback => {
+    const { currentConversation, conversationMemory, userProgress } = get();
+    
+    const totalAttempts = currentConversation.correctCount + currentConversation.errorCount;
+    const accuracy = totalAttempts > 0 ? (currentConversation.correctCount / totalAttempts) * 100 : 0;
+    
+    const grammarErrors = currentConversation.errors.filter(e => 
+      e.includes('grammar') || e.includes('verb') || e.includes('tense')
+    );
+    const vocabularyErrors = currentConversation.errors.filter(e =>
+      e.includes('word') || e.includes('vocabulary') || e.includes('meaning')
+    );
+    const pronunciationErrors = currentConversation.errors.filter(e =>
+      e.includes('pronounce') || e.includes('sound') || e.includes('accent')
+    );
+
+    const strengths: string[] = [];
+    if (accuracy >= 80) strengths.push('Excelente fluência!');
+    if (currentConversation.correctCount >= 5) strengths.push('Boa comunicação geral');
+    if (grammarErrors.length < vocabularyErrors.length) strengths.push('Boa gramática');
+
+    const areasToImprove: string[] = [];
+    if (grammarErrors.length > 0) areasToImprove.push('Foque nos tempos verbais');
+    if (vocabularyErrors.length > 0) areasToImprove.push('Amplie seu vocabulário');
+    if (pronunciationErrors.length > 0) areasToImprove.push('Pratique a pronúncia');
+
+    const encouragement = accuracy >= 80 
+      ? 'Você está pronto para o próximo nível! Continue assim! 🚀'
+      : accuracy >= 60 
+        ? 'Bom progresso! Continue praticando para melhorar ainda mais! 💪'
+        : 'Cada tentativa é um passo para a fluência. Não desista! 🌟';
+
+    const newMemory: ConversationMemory = {
+      ...conversationMemory,
+      recentTopics: [
+        currentConversation.topic || 'General Practice',
+        ...conversationMemory.recentTopics.filter(t => t !== currentConversation.topic)
+      ].slice(0, 10),
+      lastConversationDate: new Date().toISOString(),
+      totalConversations: conversationMemory.totalConversations + 1,
+      averageAccuracy: (conversationMemory.averageAccuracy + accuracy) / 2,
+    };
+
+    set({
+      conversationMemory: newMemory,
+      currentConversation: {
+        messages: [],
+        startTime: null,
+        topic: null,
+        scenario: null,
+        correctCount: 0,
+        errorCount: 0,
+        newVocabulary: [],
+        errors: [],
+      },
+    });
+
+    return {
+      summary: `Você praticou ${currentConversation.messages.length} mensagens com ${Math.round(accuracy)}% de precisão.`,
+      strengths,
+      areasToImprove,
+      newVocabulary: currentConversation.newVocabulary,
+      grammarFocus: [...new Set(grammarErrors)],
+      pronunciationTips: [...new Set(pronunciationErrors)],
+      encouragement,
+      accuracy,
+    };
   },
 }));
 

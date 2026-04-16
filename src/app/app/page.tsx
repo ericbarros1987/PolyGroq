@@ -215,6 +215,28 @@ export default function AppPage() {
           </div>
         </Link>
 
+        {/* Speaking Practice */}
+        <Link
+          href="/speaking"
+          className="block w-full bg-gradient-to-r from-green-500 to-emerald-500 rounded-3xl p-1 shadow-xl shadow-green-500/30"
+        >
+          <div className="bg-indigo-900 rounded-[22px] px-6 py-5 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="w-16 h-16 bg-gradient-to-br from-green-400 to-emerald-500 rounded-2xl flex items-center justify-center shadow-lg">
+                <Volume2 className="w-8 h-8 text-white" />
+              </div>
+              <div className="text-left">
+                <h3 className="text-xl font-bold text-white">Prática de Pronúncia</h3>
+                <p className="text-green-300">Melhore sua fala com feedback</p>
+              </div>
+            </div>
+            <div className="flex items-center gap-2 bg-white/10 px-4 py-2 rounded-xl">
+              <Mic className="w-5 h-5 text-white" />
+              <span className="text-white font-medium">Praticar</span>
+            </div>
+          </div>
+        </Link>
+
         {/* Free Practice */}
         <Link
           href="/chat"
