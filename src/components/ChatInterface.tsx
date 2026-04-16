@@ -1,7 +1,7 @@
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
-import { Avatar, Bot, User, Volume2, AlertCircle, Sparkles, Loader2 } from 'lucide-react';
+import { Bot, User, AlertCircle, Loader2 } from 'lucide-react';
 import { AudioRecorder, TextInput } from './AudioRecorder';
 import type { ChatMessage, Language, LanguageLevel, Correction } from '@/types';
 
@@ -163,14 +163,14 @@ function MessageBubble({ message, language }: MessageBubbleProps) {
         )}
 
         {message.correction && (
-          <CorrectionBadge correction={message.correction} language={language} />
+          <CorrectionBadge correction={message.correction} />
         )}
       </div>
     </div>
   );
 }
 
-function CorrectionBadge({ correction, language }: { correction: Correction; language: string }) {
+function CorrectionBadge({ correction }: { correction: Correction }) {
   return (
     <div className="mt-2 p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-xl text-sm">
       <div className="flex items-center gap-2 mb-2">
