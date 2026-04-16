@@ -1,0 +1,26 @@
+<svg width="32" height="32" viewBox="0 0 32 32" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="mainGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#8B5CF6"/>
+      <stop offset="100%" stop-color="#6D28D9"/>
+    </linearGradient>
+    <linearGradient id="accentGradient" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" stop-color="#06B6D4"/>
+      <stop offset="100%" stop-color="#3B82F6"/>
+    </linearGradient>
+  </defs>
+  
+  <!-- Fundo -->
+  <rect width="32" height="32" rx="8" fill="url(#mainGradient)"/>
+  
+  <!-- Cérebro simplificado -->
+  <path d="M11 12 C8 14 7 17 8 20 C9 23 12 25 15 26 C16 26 17 25.5 17.5 25 C16 26 13 26.5 11 25.5 C8 24 7 21 8 18 C9 15 11 13 14 12 C14 12 12.5 11 11 12Z" fill="white" opacity="0.95"/>
+  <path d="M21 12 C24 14 25 17 24 20 C23 23 20 25 17 26 C16 26 15 25.5 14.5 25 C16 26 19 26.5 21 25.5 C24 24 25 21 24 18 C23 15 21 13 18 12 C18 12 19.5 11 21 12Z" fill="white" opacity="0.95"/>
+  
+  <!-- Microfone -->
+  <circle cx="16" cy="8" r="4" fill="url(#accentGradient)"/>
+  <rect x="14.5" y="10" width="3" height="4" rx="1" fill="white"/>
+  
+  <!-- Texto PG -->
+  <text x="16" y="30" text-anchor="middle" font-family="Arial, sans-serif" font-size="7" font-weight="bold" fill="white">PG</text>
+</svg>

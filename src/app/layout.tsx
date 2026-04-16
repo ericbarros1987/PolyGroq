@@ -7,13 +7,23 @@ export const metadata: Metadata = {
   description: 'Aprenda idiomas com um professor IA paciente e nativo. Conversação em tempo real com feedback imediato.',
   manifest: '/manifest.json',
   icons: {
-    icon: '/favicon.ico',
-    apple: '/apple-touch-icon.png',
+    icon: '/favicon.svg',
+    apple: '/icon.svg',
+  },
+  appleWebApp: {
+    capable: true,
+    statusBarStyle: 'black-translucent',
+    title: 'PolyGrok',
+  },
+  openGraph: {
+    title: 'PolyGrok - Professor IA',
+    description: 'Aprenda idiomas com IA',
+    type: 'website',
   },
 };
 
 export const viewport: Viewport = {
-  themeColor: '#0ea5e9',
+  themeColor: '#7c3aed',
   width: 'device-width',
   initialScale: 1,
   maximumScale: 1,
