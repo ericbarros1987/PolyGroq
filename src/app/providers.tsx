@@ -1,7 +1,6 @@
 'use client';
 
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
-import { createContext, useContext, useEffect, useState } from 'react';
+import { createContext, useContext, useEffect } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useUserStore } from '@/store/userStore';
 import type { UserProgress } from '@/types';
@@ -21,8 +20,7 @@ const AppContext = createContext<AppContextType>({
 export const useApp = () => useContext(AppContext);
 
 function AppProvider({ children }: { children: React.ReactNode }) {
-  const [queryClient] = useState(() => new QueryClient());
-  const { userProgress, setUserProgress, loading, setLoading } = useUserStore();
+  const { userProgress, setUserProgress, setLoading } = useUserStore();
 
   useEffect(() => {
     const loadProgress = async () => {
@@ -31,13 +29,6 @@ function AppProvider({ children }: { children: React.ReactNode }) {
         if (!userId) {
           const newUserId = crypto.randomUUID();
           localStorage.setItem('poly_grok_user_id', newUserId);
-          await supabase.from('user_progress').insert({
-            user_id: newUserId,
-            current_language: 'en',
-            level: 'beginner',
-            streak_days: 0,
-            total_lessons: 0,
-          });
           setUserProgress({
             user_id: newUserId,
             current_language: 'en',
@@ -58,6 +49,18 @@ function AppProvider({ children }: { children: React.ReactNode }) {
           
           if (data) {
             setUserProgress(data);
+          } else {
+            setUserProgress({
+              user_id: userId,
+              current_language: 'en',
+              level: 'beginner',
+              streak_days: 0,
+              total_lessons: 0,
+              xp_points: 0,
+              immersion_mode: false,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString(),
+            });
           }
         }
       } catch (error) {
@@ -77,21 +80,21 @@ function AppProvider({ children }: { children: React.ReactNode }) {
     try {
       await supabase
         .from('user_progress')
-        .update({ ...progress, updated_at: new Date().toISOString() })
+        .upsert({ ...progress, user_id: userId, updated_at: new Date().toISOString() })
         .eq('user_id', userId);
       
-      setUserProgress({ ...userProgress!, ...progress });
+      if (userProgress) {
+        setUserProgress({ ...userProgress, ...progress });
+      }
     } catch (error) {
       console.error('Error updating progress:', error);
     }
   };
 
   return (
-    <QueryClientProvider client={queryClient}>
-      <AppContext.Provider value={{ userProgress, loading, updateProgress }}>
-        {children}
-      </AppContext.Provider>
-    </QueryClientProvider>
+    <AppContext.Provider value={{ userProgress, loading: useUserStore.getState().loading, updateProgress }}>
+      {children}
+    </AppContext.Provider>
   );
 }
 
