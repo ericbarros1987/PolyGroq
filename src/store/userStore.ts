@@ -1,4 +1,5 @@
 import { create } from 'zustand';
+import { supabase } from '@/lib/supabase';
 import type { UserProgress, Language, LanguageLevel, ChatMessage, ConversationContext } from '@/types';
 
 interface UserStore {
@@ -11,6 +12,7 @@ interface UserStore {
   setLanguage: (language: Language) => void;
   setLevel: (level: LanguageLevel) => void;
   toggleImmersionMode: () => void;
+  saveProgress: (progress: Partial<UserProgress>) => Promise<void>;
 }
 
 export const useUserStore = create<UserStore>((set, get) => ({
@@ -20,8 +22,29 @@ export const useUserStore = create<UserStore>((set, get) => ({
   setUserProgress: (progress) => set({ userProgress: progress }),
   setLoading: (loading) => set({ loading }),
 
-  updateStreak: () => {
+  saveProgress: async (progress) => {
     const { userProgress } = get();
+    if (!userProgress) return;
+
+    const userId = localStorage.getItem('poly_grok_user_id');
+    if (!userId) return;
+
+    try {
+      await supabase
+        .from('user_progress')
+        .upsert({ 
+          ...progress, 
+          user_id: userId,
+          updated_at: new Date().toISOString() 
+        })
+        .eq('user_id', userId);
+    } catch (error) {
+      console.error('Error saving progress:', error);
+    }
+  },
+
+  updateStreak: () => {
+    const { userProgress, saveProgress } = get();
     if (!userProgress) return;
 
     const today = new Date().toDateString();
@@ -41,17 +64,18 @@ export const useUserStore = create<UserStore>((set, get) => ({
       }
     }
 
-    set({
-      userProgress: {
-        ...userProgress,
-        streak_days: newStreak,
-        last_lesson_date: new Date().toISOString(),
-      },
-    });
+    const newProgress = {
+      ...userProgress,
+      streak_days: newStreak,
+      last_lesson_date: new Date().toISOString(),
+    };
+
+    set({ userProgress: newProgress });
+    saveProgress({ streak_days: newStreak, last_lesson_date: newProgress.last_lesson_date });
   },
 
   addXP: (amount) => {
-    const { userProgress } = get();
+    const { userProgress, saveProgress } = get();
     if (!userProgress) return;
 
     const newXP = userProgress.xp_points + amount;
@@ -74,36 +98,38 @@ export const useUserStore = create<UserStore>((set, get) => ({
       }
     }
 
-    set({
-      userProgress: {
-        ...userProgress,
-        xp_points: newXP,
-        level: newLevel,
-      },
-    });
+    const newProgress = {
+      ...userProgress,
+      xp_points: newXP,
+      level: newLevel,
+    };
+
+    set({ userProgress: newProgress });
+    saveProgress({ xp_points: newXP, level: newLevel });
   },
 
   setLanguage: (language) => {
-    const { userProgress } = get();
+    const { userProgress, saveProgress } = get();
     if (!userProgress) return;
-    set({ userProgress: { ...userProgress, current_language: language } });
+    const newProgress = { ...userProgress, current_language: language };
+    set({ userProgress: newProgress });
+    saveProgress({ current_language: language });
   },
 
   setLevel: (level) => {
-    const { userProgress } = get();
+    const { userProgress, saveProgress } = get();
     if (!userProgress) return;
-    set({ userProgress: { ...userProgress, level } });
+    const newProgress = { ...userProgress, level };
+    set({ userProgress: newProgress });
+    saveProgress({ level });
   },
 
   toggleImmersionMode: () => {
-    const { userProgress } = get();
+    const { userProgress, saveProgress } = get();
     if (!userProgress) return;
-    set({
-      userProgress: {
-        ...userProgress,
-        immersion_mode: !userProgress.immersion_mode,
-      },
-    });
+    const newProgress = { ...userProgress, immersion_mode: !userProgress.immersion_mode };
+    set({ userProgress: newProgress });
+    saveProgress({ immersion_mode: newProgress.immersion_mode });
   },
 }));
 
@@ -119,7 +145,7 @@ interface ChatStore {
   setContext: (context: Partial<ConversationContext>) => void;
 }
 
-export const useChatStore = create<ChatStore>((set, get) => ({
+export const useChatStore = create<ChatStore>((set) => ({
   messages: [],
   isRecording: false,
   isProcessing: false,

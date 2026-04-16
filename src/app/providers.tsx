@@ -1,6 +1,6 @@
 'use client';
 
-import { createContext, useContext, useEffect } from 'react';
+import { createContext, useContext, useEffect, useRef } from 'react';
 import { supabase } from '@/lib/supabase';
 import { useUserStore } from '@/store/userStore';
 import type { UserProgress } from '@/types';
@@ -21,15 +21,21 @@ export const useApp = () => useContext(AppContext);
 
 function AppProvider({ children }: { children: React.ReactNode }) {
   const { userProgress, setUserProgress, setLoading } = useUserStore();
+  const initialized = useRef(false);
 
   useEffect(() => {
+    if (initialized.current) return;
+    initialized.current = true;
+
     const loadProgress = async () => {
       try {
         const userId = localStorage.getItem('poly_grok_user_id');
+        
         if (!userId) {
           const newUserId = crypto.randomUUID();
           localStorage.setItem('poly_grok_user_id', newUserId);
-          setUserProgress({
+          
+          const newProgress: UserProgress = {
             user_id: newUserId,
             current_language: 'en',
             level: 'beginner',
@@ -39,18 +45,22 @@ function AppProvider({ children }: { children: React.ReactNode }) {
             immersion_mode: false,
             created_at: new Date().toISOString(),
             updated_at: new Date().toISOString(),
-          });
+          };
+
+          await supabase
+            .from('user_progress')
+            .insert(newProgress);
+          
+          setUserProgress(newProgress);
         } else {
-          const { data } = await supabase
+          const { data, error } = await supabase
             .from('user_progress')
             .select('*')
             .eq('user_id', userId)
             .single();
           
-          if (data) {
-            setUserProgress(data);
-          } else {
-            setUserProgress({
+          if (error && error.code === 'PGRST116') {
+            const newProgress: UserProgress = {
               user_id: userId,
               current_language: 'en',
               level: 'beginner',
@@ -60,7 +70,17 @@ function AppProvider({ children }: { children: React.ReactNode }) {
               immersion_mode: false,
               created_at: new Date().toISOString(),
               updated_at: new Date().toISOString(),
-            });
+            };
+
+            await supabase
+              .from('user_progress')
+              .insert(newProgress);
+            
+            setUserProgress(newProgress);
+          } else if (data) {
+            setUserProgress(data);
+          } else {
+            console.error('Error loading progress:', error);
           }
         }
       } catch (error) {
@@ -78,10 +98,18 @@ function AppProvider({ children }: { children: React.ReactNode }) {
     if (!userId) return;
 
     try {
-      await supabase
+      const { error } = await supabase
         .from('user_progress')
-        .upsert({ ...progress, user_id: userId, updated_at: new Date().toISOString() })
+        .upsert({ 
+          ...progress, 
+          user_id: userId, 
+          updated_at: new Date().toISOString() 
+        })
         .eq('user_id', userId);
+      
+      if (error) {
+        console.error('Error saving progress:', error);
+      }
       
       if (userProgress) {
         setUserProgress({ ...userProgress, ...progress });
