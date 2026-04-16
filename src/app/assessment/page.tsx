@@ -315,7 +315,7 @@ export default function AssessmentPage() {
           </div>
           
           <div className="bg-indigo-900/50 rounded-2xl p-4 mb-6">
-            <p className="text-xl text-white text-center font-medium">"{question.prompt}"</p>
+            <p className="text-xl text-white text-center font-medium">&#8220;{question.prompt}&#8221;</p>
           </div>
 
           {/* Microphone Button */}
@@ -344,7 +344,7 @@ export default function AssessmentPage() {
         {transcript && (
           <div className="bg-white/10 backdrop-blur-xl rounded-2xl p-4 border border-white/10 mb-4">
             <p className="text-sm text-purple-300 mb-1">Sua resposta:</p>
-            <p className="text-white text-lg">"{transcript}"</p>
+            <p className="text-white text-lg">&#8220;{transcript}&#8221;</p>
           </div>
         )}
 

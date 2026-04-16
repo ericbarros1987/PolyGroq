@@ -2,7 +2,6 @@
 
 import { useState, useCallback, useRef, useEffect } from 'react';
 import Link from 'next/link';
-import { useRouter } from 'next/navigation';
 import { ArrowLeft, Mic, MicOff, Send, Volume2, Sparkles, Zap } from 'lucide-react';
 import { useChatStore, useUserStore } from '@/store/userStore';
 import type { ChatMessage } from '@/types';
@@ -34,7 +33,6 @@ export default function ChatPage() {
   const [inputValue, setInputValue] = useState('');
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
-  const [isSpeaking, setIsSpeaking] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const recognitionRef = useRef<any>(null);
@@ -53,9 +51,6 @@ export default function ChatPage() {
     const utterance = new SpeechSynthesisUtterance(text);
     utterance.lang = 'en-US';
     utterance.rate = 0.9;
-    utterance.onstart = () => setIsSpeaking(true);
-    utterance.onend = () => setIsSpeaking(false);
-    utterance.onerror = () => setIsSpeaking(false);
     window.speechSynthesis.speak(utterance);
   }, []);
 
@@ -275,8 +270,8 @@ export default function ChatPage() {
                         <Sparkles className="w-4 h-4 text-amber-400" />
                         <span className="text-sm font-bold text-amber-400">Correção</span>
                       </div>
-                      <p className="text-red-300 line-through text-sm">"{message.correction.original}"</p>
-                      <p className="text-green-400 font-medium">"{message.correction.corrected}"</p>
+                      <p className="text-red-300 line-through text-sm">&#8220;{message.correction.original}&#8221;</p>
+                      <p className="text-green-400 font-medium">&#8220;{message.correction.corrected}&#8221;</p>
                       {message.correction.explanation && (
                         <p className="text-purple-200 text-xs mt-2">{message.correction.explanation}</p>
                       )}
@@ -327,7 +322,7 @@ export default function ChatPage() {
         <div className="max-w-3xl mx-auto px-4">
           {transcript && isListening && (
             <div className="mb-3 px-4 py-2 bg-cyan-500/20 rounded-xl border border-cyan-500/30">
-              <p className="text-sm text-cyan-200">Ouvindo: "{transcript}"</p>
+              <p className="text-sm text-cyan-200">Ouvindo: &#8220;{transcript}&#8221;</p>
             </div>
           )}
           
