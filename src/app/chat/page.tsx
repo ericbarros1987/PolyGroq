@@ -6,7 +6,7 @@ import Link from 'next/link';
 import { ArrowLeft, MoreVertical } from 'lucide-react';
 import { ChatInterface } from '@/components/ChatInterface';
 import { useChatStore, useUserStore } from '@/store/userStore';
-import type { ChatMessage } from '@/types';
+import type { ChatMessage, Language } from '@/types';
 
 export default function ChatPage() {
   const router = useRouter();
@@ -35,7 +35,7 @@ export default function ChatPage() {
           language: userProgress.current_language,
           level: userProgress.level,
           immersionMode: userProgress.immersion_mode,
-          chatHistory: messages.map(m => ({ role: m.role, content: m.content })),
+          chatHistory: messages.map((m: ChatMessage) => ({ role: m.role, content: m.content })),
           lastErrors: userProgress.errors_frequency ? Object.keys(userProgress.errors_frequency) : [],
         }),
       });
@@ -112,7 +112,7 @@ export default function ChatPage() {
         <ChatInterface
           messages={messages}
           isProcessing={isProcessing}
-          language={userProgress.current_language}
+          language={userProgress.current_language as Language}
           level={userProgress.level}
           immersionMode={userProgress.immersion_mode}
           onSendMessage={handleSendMessage}
