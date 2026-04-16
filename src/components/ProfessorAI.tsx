@@ -9,6 +9,7 @@ import {
 import { useTextToSpeech } from '@/hooks/useSpeechRecognition';
 import { useUserStore } from '@/store/userStore';
 import PremiumAvatar from './PremiumAvatar';
+import { conversationService } from '@/lib/conversationService';
 import type { LanguageLevel, ChatMessage, VocabularyItem, ScenarioContext, ConversationFeedback } from '@/types';
 
 const LEVEL_CONFIG: Record<LanguageLevel, {
@@ -609,7 +610,7 @@ export default function ProfessorAI({ level, language, onProgress }: ProfessorAI
     }
   };
 
-  const handleEndConversation = () => {
+  const handleEndConversation = async () => {
     const feedback = endConversation();
     setConversationFeedback(feedback);
     setShowFeedback(true);
@@ -625,6 +626,20 @@ export default function ProfessorAI({ level, language, onProgress }: ProfessorAI
       timestamp: new Date(),
     };
     setMessages(prev => [...prev, feedbackMsg]);
+    
+    const allMessages = [...messages, feedbackMsg];
+    
+    conversationService.saveConversation({
+      user_id: '',
+      language,
+      level,
+      scenario: currentScenario?.id,
+      messages: allMessages,
+      started_at: conversationStartTime?.toISOString() || new Date().toISOString(),
+      ended_at: new Date().toISOString(),
+      xp_earned: Math.round(feedback.accuracy / 10),
+      accuracy: feedback.accuracy,
+    }).catch(console.error);
     
     onProgress?.({ 
       xp: Math.round(feedback.accuracy / 10), 

@@ -17,7 +17,9 @@ import {
   BookOpen,
   Award,
   Globe,
-  Languages
+  Languages,
+  GraduationCap,
+  Star
 } from 'lucide-react';
 import { useUserStore } from '@/store/userStore';
 import { getLanguageByCode } from '@/data/languages';
@@ -226,11 +228,45 @@ export default function AppPage() {
           </Link>
         </div>
 
-        {/* Lessons */}
+        {/* Structured Lessons */}
+        <div>
+          <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
+            <GraduationCap className="w-5 h-5 text-purple-400" />
+            Lição Estruturada
+          </h3>
+          <Link
+            href="/lesson"
+            className="block bg-gradient-to-br from-indigo-600 to-purple-700 rounded-2xl p-6 border border-white/10 hover:scale-[1.02] transition-all group"
+          >
+            <div className="flex items-center gap-4 mb-4">
+              <div className="w-16 h-16 bg-white/20 rounded-2xl flex items-center justify-center">
+                <GraduationCap className="w-8 h-8 text-white" />
+              </div>
+              <div className="flex-1">
+                <h4 className="font-semibold text-white text-xl">Aula Guiada</h4>
+                <p className="text-purple-200 text-sm">Metodologia progressiva: palavras → frases → diálogos</p>
+              </div>
+            </div>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-4 text-sm text-purple-200">
+                <span className="flex items-center gap-1">
+                  <Star className="w-4 h-4" /> Beginner
+                </span>
+                <span>~5 min</span>
+              </div>
+              <div className="flex items-center gap-2">
+                <span className="text-amber-400 font-bold">+50 XP</span>
+                <ChevronRight className="w-5 h-5 text-white group-hover:translate-x-1 transition-transform" />
+              </div>
+            </div>
+          </Link>
+        </div>
+
+        {/* Free Practice */}
         <div>
           <h3 className="text-xl font-bold text-white mb-4 flex items-center gap-2">
             <BookOpen className="w-5 h-5 text-purple-400" />
-            Lições do Dia
+            Prática Livre
           </h3>
           <div className="grid gap-3">
             {LESSONS.map((lesson) => (
