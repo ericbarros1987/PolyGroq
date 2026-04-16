@@ -35,9 +35,11 @@ function AppProvider({ children }: { children: React.ReactNode }) {
           const newUserId = crypto.randomUUID();
           localStorage.setItem('poly_grok_user_id', newUserId);
           
+          const selectedLang = localStorage.getItem('poly_grok_selected_language') || 'en';
+          
           const newProgress: UserProgress = {
             user_id: newUserId,
-            current_language: 'en',
+            current_language: selectedLang,
             level: 'beginner',
             streak_days: 0,
             total_lessons: 0,
@@ -60,9 +62,11 @@ function AppProvider({ children }: { children: React.ReactNode }) {
             .single();
           
           if (error && error.code === 'PGRST116') {
+            const selectedLang = localStorage.getItem('poly_grok_selected_language') || 'en';
+            
             const newProgress: UserProgress = {
               user_id: userId,
-              current_language: 'en',
+              current_language: selectedLang,
               level: 'beginner',
               streak_days: 0,
               total_lessons: 0,
@@ -78,6 +82,14 @@ function AppProvider({ children }: { children: React.ReactNode }) {
             
             setUserProgress(newProgress);
           } else if (data) {
+            const selectedLang = localStorage.getItem('poly_grok_selected_language');
+            if (selectedLang && selectedLang !== data.current_language) {
+              data.current_language = selectedLang;
+              await supabase
+                .from('user_progress')
+                .update({ current_language: selectedLang })
+                .eq('user_id', userId);
+            }
             setUserProgress(data);
           } else {
             console.error('Error loading progress:', error);

@@ -86,42 +86,357 @@ const SCENARIOS: ScenarioContext[] = [
   { id: 'social', name: 'Social Gathering', description: 'Meet people, small talk', location: 'Community Event', difficulty: 'medium' },
 ];
 
-const GREETINGS: Record<LanguageLevel, { main: string; translation?: string; vocabulary: VocabularyItem[] }> = {
-  beginner: {
-    main: 'Olá! Que bom ter você aqui! Eu sou o Poly, seu professor de inglês. 🌟 Vou falar em português e te ensinar palavras em inglês aos poucos. Vamos começar?',
-    translation: 'Hello! Great to have you here! I am Poly, your English teacher.',
-    vocabulary: [
-      { word: 'Hello', translation: 'Olá', example: 'Hello! How are you?' },
-      { word: 'Teacher', translation: 'Professor', example: 'You are my teacher.' },
-      { word: 'Student', translation: 'Estudante', example: 'I am a student.' },
-    ],
+const GREETINGS: Record<string, Record<LanguageLevel, { main: string; translation?: string; vocabulary: VocabularyItem[] }>> = {
+  en: {
+    beginner: {
+      main: 'Olá! Que bom ter você aqui! Eu sou o Poly, seu professor de inglês. 🌟 Vou falar em português e te ensinar palavras em inglês aos poucos. Vamos começar?',
+      translation: 'Hello! Great to have you here! I am Poly, your English teacher.',
+      vocabulary: [
+        { word: 'Hello', translation: 'Olá', example: 'Hello! How are you?' },
+        { word: 'Teacher', translation: 'Professor', example: 'You are my teacher.' },
+        { word: 'Student', translation: 'Estudante', example: 'I am a student.' },
+      ],
+    },
+    elementary: {
+      main: 'Olá! Bem-vindo à sua aula de inglês! 🇬🇧 Vou ser seu professor e vamos aprender juntos, devagar e com calma. Vamos praticar palavras novas?',
+      translation: 'Welcome to your English lesson! I will be your teacher.',
+      vocabulary: [
+        { word: 'Welcome', translation: 'Bem-vindo', example: 'Welcome to our class!' },
+        { word: 'Lesson', translation: 'Lição', example: 'This is a great lesson.' },
+      ],
+    },
+    intermediate: {
+      main: "Hey! Ready for some English practice? Let's have a conversation and I'll help you improve!",
+      vocabulary: [
+        { word: 'Practice', translation: 'Prática', example: 'Practice makes perfect!' },
+      ],
+    },
+    upper_intermediate: {
+      main: "Welcome back! Today we'll engage in more sophisticated conversations. Let's challenge ourselves!",
+      vocabulary: [],
+    },
+    advanced: {
+      main: "Excellent to see your progress! Let's dive into an engaging conversation today.",
+      vocabulary: [],
+    },
+    fluent: {
+      main: "Welcome to your advanced English session. Let's discuss complex topics with nuance.",
+      vocabulary: [],
+    },
   },
-  elementary: {
-    main: 'Olá! Bem-vindo à sua aula de inglês! 🇬🇧 Vou ser seu professor e vamos aprender juntos, devagar e com calma. Vamos praticar palavras novas?',
-    translation: 'Welcome to your English lesson! I will be your teacher.',
-    vocabulary: [
-      { word: 'Welcome', translation: 'Bem-vindo', example: 'Welcome to our class!' },
-      { word: 'Lesson', translation: 'Lição', example: 'This is a great lesson.' },
-    ],
+  es: {
+    beginner: {
+      main: '¡Hola! ¡Qué bueno tenerte aquí! Soy Poly, tu profesor de español. 🌟 Voy a hablar en portugués y enseñarte palabras en español poco a poco. ¿Empezamos?',
+      translation: 'Hello! Great to have you here! I am Poly, your Spanish teacher.',
+      vocabulary: [
+        { word: 'Hola', translation: 'Olá', example: '¡Hola! ¿Cómo estás?' },
+        { word: 'Profesor', translation: 'Professor', example: 'Soy tu profesor.' },
+      ],
+    },
+    elementary: {
+      main: '¡Hola! Bienvenido a tu clase de español. 🇪🇸 Voy a ser tu profesor y aprenderemos juntos, despacio y con calma. ¿Practicas palabras nuevas?',
+      translation: 'Welcome to your Spanish lesson!',
+      vocabulary: [
+        { word: 'Bienvenido', translation: 'Bem-vindo', example: '¡Bienvenido a nuestra clase!' },
+      ],
+    },
+    intermediate: {
+      main: "¡Hola! ¿Listo para practicar español? Let's have a conversation and I'll help you improve!",
+      vocabulary: [],
+    },
+    upper_intermediate: {
+      main: "¡Bienvenido de nuevo! Today we'll engage in more sophisticated conversations in Spanish.",
+      vocabulary: [],
+    },
+    advanced: {
+      main: "Excelente verte progress! Let's dive into an engaging Spanish conversation today.",
+      vocabulary: [],
+    },
+    fluent: {
+      main: "Bienvenido a tu sesión avanzada de español. Let's discuss complex topics with nuance.",
+      vocabulary: [],
+    },
   },
-  intermediate: {
-    main: "Hey! Ready for some English practice? Let's have a conversation and I'll help you improve!",
-    vocabulary: [
-      { word: 'Practice', translation: 'Prática', example: 'Practice makes perfect!' },
-    ],
+  fr: {
+    beginner: {
+      main: 'Bonjour! Je suis ravi de vous avoir ici! Je suis Poly, votre professeur de français. 🌟 Je vais parler en portugais et vous enseigner des mots en français. Commençons?',
+      translation: 'Hello! I am Poly, your French teacher.',
+      vocabulary: [
+        { word: 'Bonjour', translation: 'Olá', example: 'Bonjour! Comment allez-vous?' },
+        { word: 'Professeur', translation: 'Professor', example: 'Je suis votre professeur.' },
+      ],
+    },
+    elementary: {
+      main: 'Bonjour! Bienvenue à votre cours de français. 🇫🇷 Je serai votre professeur et nous apprendrons ensemble. Prêt à pratiquer?',
+      translation: 'Welcome to your French lesson!',
+      vocabulary: [
+        { word: 'Bienvenue', translation: 'Bem-vindo', example: 'Bienvenue à notre cours!' },
+      ],
+    },
+    intermediate: {
+      main: "Bonjour! Ready for some French practice? Let's have a conversation!",
+      vocabulary: [],
+    },
+    upper_intermediate: {
+      main: "Bon retour! Today we'll practice more sophisticated French conversations.",
+      vocabulary: [],
+    },
+    advanced: {
+      main: "Excellent de vous voir! Let's dive into an engaging French conversation today.",
+      vocabulary: [],
+    },
+    fluent: {
+      main: "Bienvenue à votre session de français avancée. Let's discuss complex topics.",
+      vocabulary: [],
+    },
   },
-  upper_intermediate: {
-    main: "Welcome back! Today we'll engage in more sophisticated conversations. Let's challenge ourselves!",
-    vocabulary: [],
+  de: {
+    beginner: {
+      main: 'Hallo! Ich freue mich, Sie hier zu haben! Ich bin Poly, Ihr Deutschlehrer. 🌟 Ich werde Portugiesisch sprechen und Ihnen Deutsch beibringen. Fangen wir an?',
+      translation: 'Hello! I am Poly, your German teacher.',
+      vocabulary: [
+        { word: 'Hallo', translation: 'Olá', example: 'Hallo! Wie geht es Ihnen?' },
+        { word: 'Lehrer', translation: 'Professor', example: 'Ich bin Ihr Lehrer.' },
+      ],
+    },
+    elementary: {
+      main: 'Hallo! Willkommen zu Ihrem Deutschkurs! 🇩🇪 Ich werde Ihr Lehrer sein. Bereit zum Üben?',
+      translation: 'Welcome to your German lesson!',
+      vocabulary: [
+        { word: 'Willkommen', translation: 'Bem-vindo', example: 'Willkommen zu unserem Kurs!' },
+      ],
+    },
+    intermediate: {
+      main: "Hallo! Ready for some German practice? Let's have a conversation!",
+      vocabulary: [],
+    },
+    upper_intermediate: {
+      main: "Willkommen zurück! Today we'll practice more sophisticated German conversations.",
+      vocabulary: [],
+    },
+    advanced: {
+      main: "Ausgezeichnet Sie zu sehen! Let's dive into an engaging German conversation.",
+      vocabulary: [],
+    },
+    fluent: {
+      main: "Willkommen zu Ihrer fortgeschrittenenDeutschsprechstunde. Let's discuss complex topics.",
+      vocabulary: [],
+    },
   },
-  advanced: {
-    main: "Excellent to see your progress! Let's dive into an engaging conversation today.",
-    vocabulary: [],
+  pt: {
+    beginner: {
+      main: 'Olá! Que bom ter você aqui! Eu sou Poly, seu professor de português. 🇧🇷 Vou falar em português e te ensinar gramática e vocabulário. Vamos começar?',
+      translation: 'Hello! Great to have you here! I am Poly, your Portuguese teacher.',
+      vocabulary: [
+        { word: 'Olá', translation: 'Hello', example: 'Olá! Como vai?' },
+        { word: 'Professor', translation: 'Teacher', example: 'Sou seu professor.' },
+      ],
+    },
+    elementary: {
+      main: 'Olá! Bem-vindo à sua aula de português! 🇧🇷 Vou ser seu professor e vamos aprender juntos, devagar e com calma.',
+      translation: 'Welcome to your Portuguese lesson!',
+      vocabulary: [
+        { word: 'Bem-vindo', translation: 'Welcome', example: 'Bem-vindo à nossa aula!' },
+      ],
+    },
+    intermediate: {
+      main: "Olá! Ready for some Portuguese practice? Let's have a conversation!",
+      vocabulary: [],
+    },
+    upper_intermediate: {
+      main: "Bem-vindo de volta! Today we'll practice more sophisticated Portuguese conversations.",
+      vocabulary: [],
+    },
+    advanced: {
+      main: "Excelente vê-lo! Let's dive into an engaging Portuguese conversation today.",
+      vocabulary: [],
+    },
+    fluent: {
+      main: "Bem-vindo à sua sessão avançada de português. Let's discuss complex topics.",
+      vocabulary: [],
+    },
   },
-  fluent: {
-    main: "Welcome to your advanced English session. Let's discuss complex topics with nuance.",
-    vocabulary: [],
+  ja: {
+    beginner: {
+      main: 'こんにちは!来到这里我很高兴!我是Poly,你的日语老师。🌟 我会说葡萄牙语,慢慢教你日语。我们开始吧?',
+      translation: 'Hello! I am Poly, your Japanese teacher.',
+      vocabulary: [
+        { word: 'こんにちは', translation: 'Olá', example: 'こんにちは！お元気ですか？' },
+        { word: '先生', translation: 'Professor', example: '先生です。' },
+      ],
+    },
+    elementary: {
+      main: 'こんにちは!日本語レッスンへようこそ！🇯🇵 先生的日本語先生です。一緒に学びましょう！',
+      translation: 'Welcome to your Japanese lesson!',
+      vocabulary: [
+        { word: 'ようこそ', translation: 'Welcome', example: 'ようこそ!' },
+      ],
+    },
+    intermediate: {
+      main: "こんにちは! Ready for some Japanese practice? Let's have a conversation!",
+      vocabulary: [],
+    },
+    upper_intermediate: {
+      main: "おかえりなさい! Today we'll practice more sophisticated Japanese conversations.",
+      vocabulary: [],
+    },
+    advanced: {
+      main: "素晴らしい! Let's dive into an engaging Japanese conversation today.",
+      vocabulary: [],
+    },
+    fluent: {
+      main: "高度な日本語の会話をしましょう. Let's discuss complex topics.",
+      vocabulary: [],
+    },
   },
+  ko: {
+    beginner: {
+      main: '안녕하세요!来到这里我很高兴!나는 Poly, 한국어 선생님입니다. 🌟 나는 포르투갈어를 하고 한국어를 가르칠게요. 시작할까요?',
+      translation: 'Hello! I am Poly, your Korean teacher.',
+      vocabulary: [
+        { word: '안녕하세요', translation: 'Olá', example: '안녕하세요! 잘 지내세요?' },
+        { word: '선생님', translation: 'Professor', example: '선생님입니다.' },
+      ],
+    },
+    elementary: {
+      main: '안녕하세요! 한국어 수업에 오신 것을 환영합니다! 🇰🇷 선생님이 한국어 선생님입니다. 같이 배워요!',
+      translation: 'Welcome to your Korean lesson!',
+      vocabulary: [
+        { word: '환영', translation: 'Welcome', example: '환영합니다!' },
+      ],
+    },
+    intermediate: {
+      main: "안녕하세요! Ready for some Korean practice? Let's have a conversation!",
+      vocabulary: [],
+    },
+    upper_intermediate: {
+      main: "다시 오신 것을 환영합니다! Today we'll practice more sophisticated Korean conversations.",
+      vocabulary: [],
+    },
+    advanced: {
+      main: "훌륭합니다! Let's dive into an engaging Korean conversation today.",
+      vocabulary: [],
+    },
+    fluent: {
+      main: "고급 한국어 회화를 시작합시다. Let's discuss complex topics.",
+      vocabulary: [],
+    },
+  },
+  zh: {
+    beginner: {
+      main: '你好!很高兴见到你!我是Poly,你的中文老师。🌟 我会说葡萄牙语,慢慢教你中文。我们开始吧?',
+      translation: 'Hello! I am Poly, your Chinese teacher.',
+      vocabulary: [
+        { word: '你好', translation: 'Olá', example: '你好！你好吗？' },
+        { word: '老师', translation: 'Professor', example: '我是老师。' },
+      ],
+    },
+    elementary: {
+      main: '你好!欢迎来到你的中文课！🇨🇳 我是你的老师。我们一起学习！',
+      translation: 'Welcome to your Chinese lesson!',
+      vocabulary: [
+        { word: '欢迎', translation: 'Welcome', example: '欢迎!' },
+      ],
+    },
+    intermediate: {
+      main: "你好! Ready for some Chinese practice? Let's have a conversation!",
+      vocabulary: [],
+    },
+    upper_intermediate: {
+      main: "欢迎回来! Today we'll practice more sophisticated Chinese conversations.",
+      vocabulary: [],
+    },
+    advanced: {
+      main: "太好了! Let's dive into an engaging Chinese conversation today.",
+      vocabulary: [],
+    },
+    fluent: {
+      main: "欢迎参加高级中文会话. Let's discuss complex topics.",
+      vocabulary: [],
+    },
+  },
+  it: {
+    beginner: {
+      main: 'Ciao! Sono felice di averti qui! Sono Poly, il tuo insegnante di italiano. 🌟 Parlerò in portoghese e ti insegnerò parole in italiano. Iniziamo?',
+      translation: 'Hello! I am Poly, your Italian teacher.',
+      vocabulary: [
+        { word: 'Ciao', translation: 'Olá', example: 'Ciao! Come stai?' },
+        { word: 'Insegnante', translation: 'Professor', example: 'Sono il tuo insegnante.' },
+      ],
+    },
+    elementary: {
+      main: 'Ciao! Benvenuto alla tua lezione di italiano! 🇮🇹 Sarò il tuo insegnante. Pronti a praticare?',
+      translation: 'Welcome to your Italian lesson!',
+      vocabulary: [
+        { word: 'Benvenuto', translation: 'Welcome', example: 'Benvenuto alla nostra lezione!' },
+      ],
+    },
+    intermediate: {
+      main: "Ciao! Ready for some Italian practice? Let's have a conversation!",
+      vocabulary: [],
+    },
+    upper_intermediate: {
+      main: "Bentornato! Today we'll practice more sophisticated Italian conversations.",
+      vocabulary: [],
+    },
+    advanced: {
+      main: "Eccellente vederti! Let's dive into an engaging Italian conversation today.",
+      vocabulary: [],
+    },
+    fluent: {
+      main: "Benvenuto alla tua sessione avanzata di italiano. Let's discuss complex topics.",
+      vocabulary: [],
+    },
+  },
+  ru: {
+    beginner: {
+      main: 'Привет! Я рад видеть тебя здесь! Я Poly, твой учитель русского языка. 🌟 Я буду говорить по-португальски и учить тебя русскому. Начнём?',
+      translation: 'Hello! I am Poly, your Russian teacher.',
+      vocabulary: [
+        { word: 'Привет', translation: 'Olá', example: 'Привет! Как дела?' },
+        { word: 'Учитель', translation: 'Professor', example: 'Я твой учитель.' },
+      ],
+    },
+    elementary: {
+      main: 'Привет! Добро пожаловать на урок русского языка! 🇷🇺 Я буду твоим учителем. Готовы практиковаться?',
+      translation: 'Welcome to your Russian lesson!',
+      vocabulary: [
+        { word: 'Добро пожаловать', translation: 'Welcome', example: 'Добро пожаловать!' },
+      ],
+    },
+    intermediate: {
+      main: "Привет! Ready for some Russian practice? Let's have a conversation!",
+      vocabulary: [],
+    },
+    upper_intermediate: {
+      main: "С возвращением! Today we'll practice more sophisticated Russian conversations.",
+      vocabulary: [],
+    },
+    advanced: {
+      main: "Отлично видеть тебя! Let's dive into an engaging Russian conversation today.",
+      vocabulary: [],
+    },
+    fluent: {
+      main: "Добро пожаловать на продвинутый курс русского языка. Let's discuss complex topics.",
+      vocabulary: [],
+    },
+  },
+};
+
+const getSpeechLanguage = (lang: string): string => {
+  const langMap: Record<string, string> = {
+    en: 'en-US',
+    es: 'es-ES',
+    fr: 'fr-FR',
+    de: 'de-DE',
+    it: 'it-IT',
+    pt: 'pt-BR',
+    ja: 'ja-JP',
+    ko: 'ko-KR',
+    zh: 'zh-CN',
+    ru: 'ru-RU',
+  };
+  return langMap[lang] || 'en-US';
 };
 
 interface ProfessorAIProps {
@@ -154,7 +469,7 @@ export default function ProfessorAI({ level, language, onProgress }: ProfessorAI
   const isBeginner = level === 'beginner' || level === 'elementary';
 
   const { speak, stop: stopSpeaking } = useTextToSpeech({
-    language: isBeginner || config.nativeLanguageRatio > 0.5 ? 'pt-BR' : 'en-US',
+    language: getSpeechLanguage(language),
     onEnd: () => setIsSpeaking(false),
   });
 
@@ -204,7 +519,7 @@ export default function ProfessorAI({ level, language, onProgress }: ProfessorAI
     setConversationStartTime(new Date());
     setConversationStats({ correct: 0, errors: 0, messages: 0 });
     
-    const greeting = GREETINGS[level];
+    const greeting = GREETINGS[language]?.[level] || GREETINGS['en']?.[level];
     const greetingMsg: ChatMessage = {
       id: crypto.randomUUID(),
       role: 'assistant',
@@ -631,7 +946,7 @@ export default function ProfessorAI({ level, language, onProgress }: ProfessorAI
               <button
                 onClick={() => {
                   setShowFeedback(false);
-                  const greeting = GREETINGS[level];
+                  const greeting = GREETINGS[language]?.[level] || GREETINGS['en']?.[level];
                   setMessages([{
                     id: crypto.randomUUID(),
                     role: 'assistant',
