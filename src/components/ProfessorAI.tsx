@@ -3,13 +3,13 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { 
   Bot, User, AlertCircle, Loader2, Volume2, BookOpen, 
-  GraduationCap, Lightbulb, X, ChevronDown, MapPin, Clock,
-  Trophy, Target, TrendingUp, Sparkles, CheckCircle, Star, Mic, MicOff
+  GraduationCap, Lightbulb, MapPin, Clock,
+  Trophy, Target, TrendingUp, Sparkles, CheckCircle, Star, Mic, MicOff, Settings
 } from 'lucide-react';
 import { useTextToSpeech } from '@/hooks/useSpeechRecognition';
 import { useUserStore } from '@/store/userStore';
-import AvatarTeacher, { AvatarExpression, AvatarMood } from './AvatarTeacher';
-import type { LanguageLevel, ChatMessage, Correction, VocabularyItem, ScenarioContext, ConversationFeedback } from '@/types';
+import PremiumAvatar from './PremiumAvatar';
+import type { LanguageLevel, ChatMessage, VocabularyItem, ScenarioContext, ConversationFeedback } from '@/types';
 
 const LEVEL_CONFIG: Record<LanguageLevel, {
   cefr: string;
@@ -142,10 +142,10 @@ export default function ProfessorAI({ level, language, onProgress }: ProfessorAI
   const [conversationFeedback, setConversationFeedback] = useState<ConversationFeedback | null>(null);
   const [conversationStats, setConversationStats] = useState({ correct: 0, errors: 0, messages: 0 });
   const [conversationStartTime, setConversationStartTime] = useState<Date | null>(null);
-  const [avatarExpression, setAvatarExpression] = useState<AvatarExpression>('happy');
-  const [avatarMood, setAvatarMood] = useState<AvatarMood>('happy');
+  const [avatarExpression, setAvatarExpression] = useState<'neutral' | 'happy' | 'thinking' | 'listening' | 'speaking' | 'excited' | 'concerned'>('happy');
   const [isListening, setIsListening] = useState(false);
   const [transcript, setTranscript] = useState('');
+  const [selectedAvatar, setSelectedAvatar] = useState('alisha');
   
   const messagesEndRef = useRef<HTMLDivElement>(null);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
@@ -434,7 +434,7 @@ export default function ProfessorAI({ level, language, onProgress }: ProfessorAI
         trackError(data.correction.original, data.correction.corrected);
         setConversationStats(prev => ({ ...prev, errors: prev.errors + 1 }));
         addXP(5);
-        setAvatarExpression('correcting');
+        setAvatarExpression('concerned');
       } else {
         trackMasteredExpression(text);
         setConversationStats(prev => ({ ...prev, correct: prev.correct + 1 }));
@@ -454,7 +454,7 @@ export default function ProfessorAI({ level, language, onProgress }: ProfessorAI
         timestamp: new Date(),
       };
       setMessages(prev => [...prev, errorMsg]);
-      setAvatarExpression('encouraging');
+      setAvatarExpression('happy');
     } finally {
       setIsLoading(false);
     }
@@ -661,11 +661,10 @@ return (
       <div className="bg-white/10 border-b border-white/10 p-4">
         <div className="flex items-center justify-between mb-3">
           <div className="flex items-center gap-3">
-            <AvatarTeacher 
+            <PremiumAvatar 
+              characterId={selectedAvatar}
               expression={avatarExpression} 
-              mood={avatarMood}
               isSpeaking={isSpeaking}
-              level={level}
               size="sm"
             />
             <div>
@@ -709,11 +708,10 @@ return (
       <div className="flex-1 flex overflow-hidden">
         {/* Avatar on the side */}
         <div className="hidden lg:flex flex-col items-center justify-center p-4 bg-white/5 border-r border-white/10">
-          <AvatarTeacher 
+          <PremiumAvatar 
+            characterId={selectedAvatar}
             expression={isLoading ? 'thinking' : avatarExpression} 
-            mood={avatarMood}
             isSpeaking={isSpeaking}
-            level={level}
             size="lg"
           />
           <div className="mt-4 text-center">
@@ -753,11 +751,10 @@ return (
 
           {isLoading && (
             <div className="flex items-start gap-3">
-              <AvatarTeacher 
+              <PremiumAvatar 
+                characterId={selectedAvatar}
                 expression="thinking" 
-                mood="focused"
                 isSpeaking={true}
-                level={level}
                 size="sm"
               />
               <div className="bg-white/10 rounded-2xl rounded-tl-none px-4 py-3">
